@@ -1,0 +1,50 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/base64.h
+stddef.h
+-
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/cJSON.h
+stddef.h
+-
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/file.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/json.h
+server.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/server.h
+cJSON.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/cJSON.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/server.c
+stdio.h
+-
+time.h
+-
+winsock2.h
+-
+cJSON.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/cJSON.h
+sha256.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/sha256.h
+base64.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/base64.h
+file.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/file.h
+json.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/json.h
+server.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/server.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/server.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Server/sha256.h
+stddef.h
+-
+

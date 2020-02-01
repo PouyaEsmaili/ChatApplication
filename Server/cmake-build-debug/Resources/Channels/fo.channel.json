@@ -1,0 +1,15 @@
+{
+	"messages":	[{
+			"sender":	"server",
+			"content":	"abc created fo"
+		}, {
+			"sender":	"server",
+			"content":	"po joined fo"
+		}, {
+			"sender":	"server",
+			"content":	"abc leaved fo"
+		}, {
+			"sender":	"server",
+			"content":	"po leaved fo"
+		}]
+}

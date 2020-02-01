@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Client/UI.c
+UI.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Client/UI.h
+stdio.h
+-
+stdlib.h
+-
+client.h
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Client/client.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Client/UI.h
+
+E:/OneDrive/University/98 Semester 1/Fundamentals of Programming/Project/Client/client.h
+

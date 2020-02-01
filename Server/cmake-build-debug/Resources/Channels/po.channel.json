@@ -1,0 +1,24 @@
+{
+	"messages":	[{
+			"sender":	"server",
+			"content":	"po created po"
+		}, {
+			"sender":	"po",
+			"content":	"hello"
+		}, {
+			"sender":	"po",
+			"content":	"what's up?"
+		}, {
+			"sender":	"po",
+			"content":	"this is a greate application"
+		}, {
+			"sender":	"server",
+			"content":	"po leaved po"
+		}, {
+			"sender":	"server",
+			"content":	"po joined po"
+		}, {
+			"sender":	"server",
+			"content":	"po leaved po"
+		}]
+}
