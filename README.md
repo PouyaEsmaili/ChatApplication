@@ -160,7 +160,7 @@ It keeps the response of server to each request.
  
 
 ### json.h
-It contains 2 sets of functions for creating a JSON object or parse a JSON string. The names of the functions are clear so there is no need for explanation.
+It contains 2 sets of functions for creating a JSON object or parse a JSON string (One set with `cJSON` and another set without `cJSON`). The names of the functions are clear so there is no need for explanation.
 
 ### file.h
 It has the following functions to work with files:
