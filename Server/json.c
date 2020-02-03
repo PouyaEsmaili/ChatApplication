@@ -1,9 +1,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "server.h"
-#include "cJSON.h"
 #include "json.h"
 
+//#define USE_CJSON
+#ifdef USE_CJSON
+#include "cJSON.h"
+#endif
+
+#ifdef USE_CJSON
 User parse_user(char* data)
 {
 	User user;
@@ -245,3 +250,269 @@ cJSON* create_response_object(Response response)
 
 	return response_json;
 }
+#endif
+
+#ifndef USE_CJSON
+
+#include <stdio.h>
+
+char* replace(const char* data, char* str1, char* str2);
+
+User parse_user(char* data)
+{
+	char username[MAX], password[MAX];
+	int uindex = 0;
+	int pindex = 0;
+	User user;
+	int index = 13;
+	while(!(data[index] == '\"' && data[index - 1] != '\\'))
+	{
+		username[uindex] = data[index];
+		uindex++;
+		index++;
+	}
+	index += 14;
+	while(!(data[index] == '\"' && data[index - 1] != '\\'))
+	{
+		password[pindex] = data[index];
+		pindex++;
+		index++;
+	}
+	username[uindex] = 0;
+	password[pindex] = 0;
+
+	user.username = malloc(strlen(username) + 1);
+	user.password = malloc(strlen(password) + 1);
+	strcpy(user.username, username);
+	strcpy(user.password, password);
+	user.channel = NULL;
+	user.token = NULL;
+	user.last_seen_message = 0;
+
+	return user;
+}
+
+Channel parse_channel(char* data)
+{
+	int size = strlen(data);
+	Channel channel;
+
+	data[size - 1] = 0;
+	int n;
+	channel.messages = parse_messages(&data[12], &n);
+	channel.messages_len = n;
+
+	return channel;
+}
+
+Message* parse_messages(char *data, int* n)
+{
+	*n = 0;
+	for(int i = 0; data[i]; i++)
+	{
+		if(data[i] == '{')
+			*n += 1;
+	}
+
+	Message* messages = malloc(*n * sizeof(Message));
+
+	int index = 12;
+	for(int i = 0; i < *n; i++)
+	{
+		char sender[MAX], content[MAX];
+		int sindex = 0;
+		int cindex = 0;
+		while(!(data[index] == '\"' && data[index - 1] != '\\'))
+		{
+			sender[sindex] = data[index];
+			sindex++;
+			index++;
+		}
+		index += 13;
+		while(!(data[index] == '\"' && data[index - 1] != '\\'))
+		{
+			content[cindex] = data[index];
+			cindex++;
+			index++;
+		}
+		sender[sindex] = 0;
+		content[cindex] = 0;
+
+		index += 14;
+
+		messages[i].sender = malloc(strlen(sender) + 1);
+		messages[i].content = malloc(strlen(content) + 1);
+		strcpy(messages[i].sender, sender);
+		strcpy(messages[i].content, content);
+	}
+
+	return messages;
+}
+
+cJSON* create_user_object(User user)
+{
+	char temp[MAX];
+	memset(temp, 0, MAX);
+	sprintf(temp, "{\"username\":\"%s\",\"password\":\"%s\"}", user.username, user.password);
+	cJSON* json = malloc(sizeof(cJSON));
+	json->data = malloc(strlen(temp) + 1);
+	strcpy(json->data, temp);
+	return json;
+}
+
+cJSON* create_channel_object(Channel channel)
+{
+	cJSON* json = malloc(sizeof(cJSON));
+
+	cJSON* messages = create_message_list_object(channel.messages, channel.messages_len);
+	json->data = malloc(strlen(messages->data) + 20);
+	memset(json->data, 0, strlen(messages->data) + 20);
+	sprintf(json->data, "{\"messages\":%s}", messages->data);
+	free(messages->data);
+	return json;
+}
+
+cJSON* create_message_list_object(Message* messages, int len)
+{
+	cJSON* json = malloc(sizeof(cJSON));
+
+	json->data = malloc(MAX);
+	memset(json->data, 0, MAX);
+	strcat(json->data, "[");
+	int datasize = MAX;
+	int datataken = 1;
+
+	for(int i = 0; i < len; i++)
+	{
+		cJSON* message = create_message_object(messages[i]);
+		datataken += strlen(message->data) + 2;
+		if(datataken > datasize - 100)
+		{
+			datasize *= 2;
+			json->data = realloc(json->data, datasize);
+		}
+		strcat(json->data, message->data);
+		if(i + 1 < len)
+			strcat(json->data, ",");
+		free(message->data);
+	}
+	strcat(json->data, "]");
+
+	return json;
+}
+
+cJSON* create_message_object(Message message)
+{
+	char temp[MAX];
+	memset(temp, 0, MAX);
+	char* sender = replace(message.sender, "\"", "\\\"");
+	char* content = replace(message.content, "\"", "\\\"");
+	sprintf(temp, "{\"sender\":\"%s\",\"content\":\"%s\"}", sender, content);
+	free(sender);
+	free(content);
+	cJSON* json = malloc(sizeof(cJSON));
+	json->data = malloc(strlen(temp) + 1);
+	strcpy(json->data, temp);
+	return json;
+}
+
+cJSON* create_members_object(User* user, int len, char* channel_name)
+{
+	cJSON* json = malloc(sizeof(cJSON));
+
+	json->data = malloc(MAX);
+	memset(json->data, 0, MAX);
+	strcat(json->data, "[");
+	int datasize = MAX;
+	int datataken = 1;
+
+	for(int i = 0; i < len; i++)
+	{
+		if(user->channel == NULL)
+			continue;
+
+		if(strcmp(user[i].channel, channel_name) == 0)
+		{
+			strcat(json->data, "\"");
+			datataken += strlen(user[i].username + 3);
+			if (datataken > datasize - 100)
+			{
+				datasize *= 2;
+				json->data = realloc(json->data, datasize);
+			}
+			strcat(json->data, user[i].username);
+			strcat(json->data, "\"");
+			strcat(json->data, ",");
+		}
+	}
+	json->data[strlen(json->data) - 1] = 0;
+	strcat(json->data, "]");
+
+	return json;
+}
+
+cJSON* create_response_object(Response response)
+{
+	cJSON* json = malloc(sizeof(cJSON));
+	int datasize = strlen(response.type) + strlen(response.content) + 100;
+	json->data = malloc(datasize);
+	memset(json->data, 0, datasize);
+	if(response.content[0] != '[')
+		sprintf(json->data, "{\"type\":\"%s\",\"content\":\"%s\"}", response.type, response.content);
+	else
+		sprintf(json->data, "{\"type\":\"%s\",\"content\":%s}", response.type, response.content);
+	return json;
+}
+
+char* replace(const char* data, char* str1, char* str2)
+{
+
+	char *result;
+	int i, cnt = 0;
+	int newWlen = strlen(str2);
+	int oldWlen = strlen(str1);
+
+	// Counting the number of times old word
+	// occur in the string
+	for (i = 0; data[i] != '\0'; i++)
+	{
+		if (strstr(&data[i], str1) == &data[i])
+		{
+			cnt++;
+
+			// Jumping to index after the old word.
+			i += oldWlen - 1;
+		}
+	}
+
+	// Making new string of enough length
+	result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
+
+	i = 0;
+	while (*data)
+	{
+		// compare the substring with the result
+		if (strstr(data, str1) == data)
+		{
+			strcpy(&result[i], str2);
+			i += newWlen;
+			data += oldWlen;
+		}
+		else
+			result[i++] = *data++;
+	}
+
+	result[i] = '\0';
+	return result;
+}
+
+char* cJSON_PrintUnformatted(cJSON* json)
+{
+	return json->data;
+}
+
+void cJSON_Delete(cJSON* json)
+{
+	free(json->data);
+}
+#endif

@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include <winsock2.h>
 #include <string.h>
+
+#ifdef USE_CJSON
 #include "cJSON.h"
+#endif
 
 const int alloc_offset = 1;
 
@@ -291,6 +294,7 @@ Response client(char *send_buffer)
 	return res;
 }
 
+#ifdef USE_CJSON
 Response parse(const char *data)
 {
 	Response res;
@@ -469,6 +473,7 @@ Member* parse_member(const char *data, int *n)
 		return NULL;
 	}
 }
+#endif
 
 void change_error_handler(int (*error_handler)(Response))
 {
@@ -492,3 +497,197 @@ void message_push_back(Message **messages, Message m, int *m_size, int *m_index)
 	}
 	*(*messages + *m_index) = m;
 }
+
+#ifndef USE_CJSON
+char* replace(const char* data, char* str1, char* str2);
+int cmp(const char* str1, int a, int b, const char* str2);
+
+Response parse(const char* data)
+{
+	Response response;
+	int size = strlen(data);
+	if(data[0] == '{' && data[size - 2] == '}' && cmp(data, 1, 8, "\"type\":\""))
+	{
+		int typelen, contentlen;
+		int i = 9;
+		for (; !(data[i] == '\"' && data[i - 1] != '\\'); i++);
+		typelen = i - 9;
+		response.type = malloc(typelen + 1);
+		for (int j = 9; j <= i; j++)
+		{
+			if(j < i)
+				response.type[j - 9] = data[j];
+			else
+				response.type[j - 9] = 0;
+		}
+		if (cmp(data, i, i + 11, "\",\"content\":"))
+		{
+			i += 12;
+			if(data[i] == '\"')
+				i++;
+			int j = i;
+			i = size - 3;
+			contentlen = i - j;
+			response.content = malloc(contentlen + 1);
+			for (int k = j; k <= i; k++)
+			{
+				if(k < i)
+					response.content[k - j] = data[k];
+				else
+					response.content[k - j] = 0;
+			}
+		}
+		else
+		{
+			char* stype = "Error";
+			char* scontent = "Could not find content";
+			response.type = realloc(response.type, strlen(stype) + 1);
+			response.content = malloc(strlen(scontent));
+			strcpy(response.type, stype);
+			strcpy(response.content, scontent);
+		}
+	}
+	else
+	{
+		char* stype = "Error";
+		char* scontent = "Could not find content";
+		response.type = malloc(strlen(stype) + 1);
+		response.content = malloc(strlen(scontent));
+		strcpy(response.type, stype);
+		strcpy(response.content, scontent);
+	}
+	return response;
+}
+
+Message* parse_message(const char *data, int *n)
+{
+	*n = 0;
+	for(int i = 0; data[i]; i++)
+	{
+		if(data[i] == '{')
+			*n += 1;
+	}
+
+	Message* messages = malloc(*n * sizeof(Message));
+
+	int index = 12;
+	for(int i = 0; i < *n; i++)
+	{
+		char sender[MAX], content[MAX];
+		int sindex = 0;
+		int cindex = 0;
+		while(!(data[index] == '\"' && data[index - 1] != '\\'))
+		{
+			sender[sindex] = data[index];
+			sindex++;
+			index++;
+		}
+		index += 13;
+		while(!(data[index] == '\"' && data[index - 1] != '\\'))
+		{
+			content[cindex] = data[index];
+			cindex++;
+			index++;
+		}
+		sender[sindex] = 0;
+		content[cindex] = 0;
+
+		index += 14;
+
+		messages[i].sender = malloc(strlen(sender) + 1);
+		messages[i].content = malloc(strlen(content) + 1);
+		strcpy(messages[i].sender, sender);
+		strcpy(messages[i].content, content);
+	}
+
+	return messages;
+}
+
+Member* parse_member(const char* d, int* n)
+{
+	*n = 1;
+	for(int i = 0; d[i]; i++)
+	{
+		if(d[i] == ',')
+			*n += 1;
+	}
+
+	Member* members = malloc(*n * sizeof(Member));
+
+	char* data = replace(d, "\\\"", "\"");
+	int index = 2;
+	for(int i = 0; i < *n; i++)
+	{
+		char username[MAX];
+		int uindex = 0;
+		while(!(data[index] == '\"' && data[index - 1] != '\\'))
+		{
+			username[uindex] = data[index];
+			uindex++;
+			index++;
+		}
+		username[uindex] = 0;
+
+		index += 3;
+
+		members[i].username = malloc(strlen(username) + 1);
+		strcpy(members[i].username, username);
+	}
+	return members;
+}
+
+char* replace(const char* data, char* str1, char* str2)
+{
+
+	char *result;
+	int i, cnt = 0;
+	int newWlen = strlen(str2);
+	int oldWlen = strlen(str1);
+
+	// Counting the number of times old word
+	// occur in the string
+	for (i = 0; data[i] != '\0'; i++)
+	{
+		if (strstr(&data[i], str1) == &data[i])
+		{
+			cnt++;
+
+			// Jumping to index after the old word.
+			i += oldWlen - 1;
+		}
+	}
+
+	// Making new string of enough length
+	result = (char *)malloc(i + cnt * (newWlen - oldWlen) + 1);
+
+	i = 0;
+	while (*data)
+	{
+		// compare the substring with the result
+		if (strstr(data, str1) == data)
+		{
+			strcpy(&result[i], str2);
+			i += newWlen;
+			data += oldWlen;
+		}
+		else
+			result[i++] = *data++;
+	}
+
+	result[i] = '\0';
+	return result;
+}
+
+int cmp(const char* str1, int a, int b, const char* str2)
+{
+	for(int i = a; i <= b; i++)
+	{
+		if(str1[i] != *str2)
+			return 0;
+		str2++;
+	}
+	if(*str2)
+		return 0;
+	return 1;
+}
+#endif

@@ -20,6 +20,7 @@
   THE SOFTWARE.
 */
 
+#ifdef USE_CJSON
 #ifndef cJSON__h
 #define cJSON__h
 
@@ -290,4 +291,5 @@ CJSON_PUBLIC(void) cJSON_free(void *object);
 }
 #endif
 
+#endif
 #endif

@@ -27,11 +27,3 @@ int err_handler(Response res)
 		return -2;
 	return -1;
 }
-
-void print_messages(Message messages[], int n)
-{
-	for (int i = 0; i < n; ++i)
-	{
-		printf("Sender: %s, Content: %s\n\n", messages[i].sender, messages[i].content);
-	}
-}

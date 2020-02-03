@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <time.h>
 #include <winsock2.h>
-#include "cJSON.h"
 #include "sha256.h"
 #include "base64.h"
 #include "file.h"
 #include "json.h"
 #include "server.h"
+#ifdef USE_CJSON
+#include "cJSON.h"
+#endif
 
 int server_socket , client_socket;
 struct sockaddr_in server, client;
@@ -46,8 +48,6 @@ char* create_user_hash(User user);
 char* create_token(User user);
 
 void delete_channel(Channel channel);
-
-void make_error();
 
 int init(int PORT)
 {
@@ -385,7 +385,7 @@ Response send_message(char* content, char* token)
 
 	if(channel_json != NULL)
 	{
-		int res = write_file(address, cJSON_Print(channel_json));
+		int res = write_file(address, cJSON_PrintUnformatted(channel_json));
 		delete_channel(channel);
 		cJSON_Delete(channel_json);
 		free(address);
@@ -425,7 +425,7 @@ int server_message(char* message, char* channel)
 
 		if(channel_json != NULL)
 		{
-			int res = write_file(address, cJSON_Print(channel_json));
+			int res = write_file(address, cJSON_PrintUnformatted(channel_json));
 			cJSON_Delete(channel_json);
 			delete_channel(c);
 			free(address);
@@ -519,7 +519,6 @@ Response leave(char* token)
 	user->last_seen_message = 0;
 
 	delete_channel(channel);
-	delete_channel(channel);
 
 	return make_response("Successful", "");
 }
@@ -537,7 +536,7 @@ int make_user(char* username, char* password)
 
 	if(user_json != NULL)
 	{
-		int res = write_file(address, cJSON_Print(user_json));
+		int res = write_file(address, cJSON_PrintUnformatted(user_json));
 		cJSON_Delete(user_json);
 		free(address);
 		return res;
@@ -561,7 +560,7 @@ int make_channel(char* name)
 
 	if(channel_json != NULL)
 	{
-		int res = write_file(address, cJSON_Print(channel_json));
+		int res = write_file(address, cJSON_PrintUnformatted(channel_json));
 		cJSON_Delete(channel_json);
 		free(address);
 		return res;
@@ -767,12 +766,4 @@ void delete_channel(Channel channel)
 	}
 	if(channel.messages != NULL)
 		free(channel.messages);
-}
-
-void make_error()
-{
-	printf("\n%p\n", malloc(10));
-	fflush(stdout);
-	perror("malloc");
-	fflush(stderr);
 }
